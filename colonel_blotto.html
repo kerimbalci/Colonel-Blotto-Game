@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Colonel Blotto — JS (Human vs Adaptive Bot)</title>
+  <style>
+    :root{--accent:#6c5ce7;--muted:#6b6b6b}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;display:flex;align-items:flex-start;justify-content:center;padding:20px;background:linear-gradient(180deg,#0f172a,#071029);color:#e6eef8}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.02));border-radius:12px;padding:18px;width:980px;box-shadow:0 6px 30px rgba(2,6,23,.6)}
+    h1{margin:0 0 10px;font-size:20px}
+    .top{display:flex;gap:16px}
+    .panel{background:rgba(255,255,255,.02);padding:12px;border-radius:10px;flex:1}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    .controls{display:flex;gap:12px;align-items:center}
+    input[type=range]{width:100%}
+    .row{display:flex;gap:10px;align-items:center}
+    .small{font-size:13px;color:var(--muted)}
+    .summary{margin-top:12px}
+    button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:white;cursor:pointer;font-weight:600}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,.06)}
+    .history{margin-top:12px;max-height:220px;overflow:auto;padding:8px;border-radius:8px;background:rgba(0,0,0,.2)}
+    .battlefields{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .bf{padding:10px;background:linear-gradient(180deg,#0b1220,#071223);border-radius:8px}
+    .scoreboard{display:flex;gap:12px;margin-top:12px}
+    .score{padding:10px;border-radius:8px;background:rgba(255,255,255,.02);min-width:110px}
+    footer{margin-top:10px;font-size:13px;color:var(--muted)}
+    .logitem{font-size:13px;padding:6px;border-bottom:1px dashed rgba(255,255,255,.03)}
+    .muted{color:var(--muted)}
+    .select{background:transparent;border:1px solid rgba(255,255,255,.06);padding:6px;border-radius:6px;color:inherit}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Colonel Blotto — İnsan vs Düşünen Bot (JS)</h1>
+    <div class="top">
+      <div class="panel">
+        <div class="row"><div style="flex:1">
+          <label>Toplam Asker Sayısı</label>
+          <input id="totalSoldiers" type="number" min="3" value="100" style="width:120px;padding:6px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,.06);color:inherit" />
+        </div>
+        <div style="width:160px">
+          <label>Tur Sayısı (oynanmış tur sayısı)</label>
+          <input id="roundsPlayed" type="number" min="1" value="1" style="width:120px;padding:6px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,.06);color:inherit" />
+        </div>
+        <div style="width:180px">
+          <label>Bot Seviye</label>
+          <select id="botMode" class="select">
+            <option value="adaptive">Adaptive (öğrenen, önerilen)</option>
+            <option value="predictive">Predictive (tahmine dayalı)</option>
+            <option value="greedy">Greedy (kortik, deterministic)</option>
+            <option value="random">Random (rastgele)</option>
+          </select>
+        </div>
+        </div>
+
+        <hr style="opacity:.06;margin:12px 0">
+        <div>
+          <label>Her Cepheye Asker Dağılımı (Toplam = <span id="totalDisplay">100</span>)</label>
+          <div class="battlefields">
+            <div class="bf">
+              <div class="row"><label>Cephe A</label><input id="aRange" type="range" min="0" max="100" value="33" /></div>
+              <div class="row" style="margin-top:6px"><input id="aNum" type="number" min="0" value="33" style="width:70px;padding:6px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,.06);color:inherit" /><div class="small" style="margin-left:8px">% değil asker</div></div>
+            </div>
+            <div class="bf">
+              <div class="row"><label>Cephe B</label><input id="bRange" type="range" min="0" max="100" value="33" /></div>
+              <div class="row" style="margin-top:6px"><input id="bNum" type="number" min="0" value="33" style="width:70px;padding:6px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,.06);color:inherit" /><div class="small" style="margin-left:8px">asker</div></div>
+            </div>
+            <div class="bf">
+              <div class="row"><label>Cephe C</label><input id="cRange" type="range" min="0" max="100" value="34" /></div>
+              <div class="row" style="margin-top:6px"><input id="cNum" type="number" min="0" value="34" style="width:70px;padding:6px;border-radius:6px;background:transparent;border:1px solid rgba(255,255,255,.06);color:inherit" /><div class="small" style="margin-left:8px">asker</div></div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;justify-content:space-between;align-items:center">
+            <div class="small">Kalan: <span id="remaining" class="muted">0</span></div>
+            <div>
+              <button id="playBtn">Tur Oyna</button>
+              <button id="resetBtn" class="secondary">Sıfırla</button>
+            </div>
+          </div>
+
+          <div class="summary">
+            <div class="scoreboard">
+              <div class="score"><div class="small">İnsan Toplam Skor</div><div id="humanScore" style="font-size:18px">0</div></div>
+              <div class="score"><div class="small">Bot Toplam Skor</div><div id="botScore" style="font-size:18px">0</div></div>
+              <div class="score"><div class="small">Turlar</div><div id="roundDisplay" style="font-size:18px">0</div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panel" style="flex:0.9">
+        <label>Oyun Geçmişi / Log</label>
+        <div class="history" id="history"></div>
+
+        <hr style="opacity:.06;margin:12px 0">
+        <label>Bot Tahminleme / Strateji Açıklaması</label>
+        <div id="botExplain" style="padding:8px;background:rgba(0,0,0,.15);border-radius:8px;min-height:86px">Bot henüz oynadıktan sonra strateji açıklaması gösterecek.</div>
+
+        <hr style="opacity:.06;margin:12px 0">
+        <div class="row">
+          <button id="exportBtn" class="secondary">Geçmişi JSON Olarak Dışa Aktar</button>
+          <div style="flex:1"></div>
+          <button id="undoBtn" class="secondary">Sonu Geri Al</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Not: Bu dosya tek HTML dosyasıdır. İndirip tarayıcıda açarak (Chrome/Firefox) çalıştırabilirsiniz. Bot stratejisi Monte Carlo tabanlı örnekleme + geçmişe dayalı tahmin içerir (Random, Greedy, Predictive, Adaptive modları mevcut).
+    </footer>
+  </div>
+
+<script>
+
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function sum(arr){return arr.reduce((a,b)=>a+b,0)}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+
+const totalSoldiers = document.getElementById('totalSoldiers');
+const totalDisplay = document.getElementById('totalDisplay');
+const aRange = document.getElementById('aRange');
+const bRange = document.getElementById('bRange');
+const cRange = document.getElementById('cRange');
+const aNum = document.getElementById('aNum');
+const bNum = document.getElementById('bNum');
+const cNum = document.getElementById('cNum');
+const remaining = document.getElementById('remaining');
+const playBtn = document.getElementById('playBtn');
+const resetBtn = document.getElementById('resetBtn');
+const historyEl = document.getElementById('history');
+const humanScoreEl = document.getElementById('humanScore');
+const botScoreEl = document.getElementById('botScore');
+const roundDisplay = document.getElementById('roundDisplay');
+const botExplain = document.getElementById('botExplain');
+const botMode = document.getElementById('botMode');
+const roundsPlayedInput = document.getElementById('roundsPlayed');
+const exportBtn = document.getElementById('exportBtn');
+const undoBtn = document.getElementById('undoBtn');
+
+let state = {
+  rounds: 0,
+  humanScore: 0,
+  botScore: 0,
+  history: [], 
+  humanPast: [] 
+}
+
+function setSlidersFromNums(){
+  aRange.max = totalSoldiers.value; bRange.max = totalSoldiers.value; cRange.max = totalSoldiers.value;
+  aRange.value = aNum.value; bRange.value = bNum.value; cRange.value = cNum.value;
+  updateRemaining();
+}
+
+function updateNumsFromRanges(){
+  aNum.value = parseInt(aRange.value); bNum.value = parseInt(bRange.value); cNum.value = parseInt(cRange.value);
+  updateRemaining();
+}
+
+function updateRemaining(){
+  const t = parseInt(totalSoldiers.value);
+  const cur = sum([parseInt(aNum.value||0),parseInt(bNum.value||0),parseInt(cNum.value||0)]);
+  totalDisplay.textContent = t;
+  remaining.textContent = (t - cur);
+}
+
+
+[aRange,bRange,cRange].forEach(el=>el.addEventListener('input',()=>{updateNumsFromRanges()}));
+[aNum,bNum,cNum].forEach(el=>el.addEventListener('input',()=>{setSlidersFromNums()}));
+totalSoldiers.addEventListener('input',()=>{setSlidersFromNums()});
+
+
+function sampleDirichlet(alpha, total){
+ 
+  const k = alpha.length;
+  let xs = [];
+  for(let i=0;i<k;i++){
+    const u = Math.random();
+    xs.push(-Math.log(u) * alpha[i]);
+  }
+  const s = sum(xs);
+  let res = xs.map(x=>Math.max(0,Math.round(x/s*total)));
+  // fix sum rounding
+  let diff = total - sum(res);
+  while(diff!==0){
+    const idx = Math.floor(Math.random()*k);
+    if(diff>0) res[idx]++;
+    else if(res[idx]>0) res[idx]--;
+    diff = total - sum(res);
+  }
+  return res;
+}
+
+function humanEstimateDistribution(){
+ 
+  const k = 3;
+  const T = state.humanPast.length;
+  if(T===0) return [1/3,1/3,1/3];
+  let sums = [0,0,0];
+  state.humanPast.forEach(v=>{const s=sum(v); for(let i=0;i<k;i++) sums[i]+= (s>0? v[i]/s : 1/3);});
+  return sums.map(x=>x/T);
+}
+
+function generateCandidates(total, predDist, mode, nCandidates=600){
+  const cand = [];
+  for(let i=0;i<nCandidates;i++){
+    let alpha;
+    if(mode==='random'){
+      alpha = [1,1,1];
+    } else if(mode==='predictive'){
+    
+      alpha = predDist.map(p=>Math.max(0.1,p)*8 + Math.random()*2);
+    } else if(mode==='adaptive'){
+      
+      const counter = predDist.map(p=>Math.max(0.01,1-p));
+      if(Math.random()<0.5) alpha = predDist.map(p=>Math.max(0.1,p)*6 + Math.random()*3);
+      else alpha = counter.map(c=>c*6 + Math.random()*3);
+    } else { 
+  
+      const fav = Math.floor(Math.random()*3);
+      alpha = [0.5,0.5,0.5]; alpha[fav]=8 + Math.random()*4;
+    }
+    cand.push(sampleDirichlet(alpha,total));
+  }
+  return cand;
+}
+
+function scoreAllocation(a,b){
+ 
+  let human=0, bot=0, ties=0;
+  for(let i=0;i<3;i++){
+    if(a[i]>b[i]) human++;
+    else if(b[i]>a[i]) bot++;
+    else ties++;
+  }
+  return [human,bot,ties];
+}
+
+function pickBestBotAllocation(total, mode){
+  const pred = humanEstimateDistribution();
+  const sampledHumans = [];
+  
+  for(let i=0;i<80;i++) sampledHumans.push(sampleDirichlet(pred.map(p=>Math.max(0.01,p)*12), total));
+
+  const candidates = generateCandidates(total, pred, mode, 600);
+  let best=null; let bestExp=-Infinity;
+  for(const c of candidates){
+    let totExp=0;
+    for(const h of sampledHumans){
+      const sc = scoreAllocation(h,c);
+      totExp += (sc[1] + 0.2*sc[2]);
+    }
+    const avg = totExp / sampledHumans.length;
+    if(avg>bestExp){bestExp=avg; best=c;}
+  }
+  return {alloc: best || sampleDirichlet([1,1,1],total), predicted: pred, exp: bestExp};
+}
+
+function playRound(){
+  const t = parseInt(totalSoldiers.value);
+  let humanAlloc = [parseInt(aNum.value||0),parseInt(bNum.value||0),parseInt(cNum.value||0)];
+  if(sum(humanAlloc)!==t){
+    alert('Toplam asker sayısı ile dağılım eşleşmiyor. Lütfen toplamı ' + t + ' yapın.');
+    return;
+  }
+  const mode = botMode.value;
+  let botChoice;
+  if(mode==='random'){
+    botChoice = sampleDirichlet([1,1,1], t);
+  } else if(mode==='greedy'){
+    const pred = humanEstimateDistribution();
+    const fav = pred.indexOf(Math.max(...pred));
+    botChoice = [0,0,0]; botChoice[fav] = t; 
+  } else {
+    const out = pickBestBotAllocation(t, mode);
+    botChoice = out.alloc;
+    
+    botExplain.innerHTML = `<div class="muted">Bot moda: ${mode}</div>
+      <div>İnsan geçmiş tahmini (oran): ${out.predicted.map(x=>x.toFixed(2)).join(' , ')}</div>
+      <div>Seçilen dağılım: ${botChoice.join(' , ')}</div>
+      <div>Beklenen bot kazanma (ortalama front sayısı): ${out.exp.toFixed(2)}</div>`;
+  }
+
+  
+  const res = scoreAllocation(humanAlloc, botChoice);
+  let winner;
+  if(res[0]>res[1]){ winner='Human'; state.humanScore += 1;} else if(res[1]>res[0]){ winner='Bot'; state.botScore += 1;} else { winner = (res[2]===3? 'Tie' : (res[0]===res[1]? 'Tie' : (res[1]>res[0]?'Bot':'Human')) ); }
+  state.rounds += 1;
+  state.history.unshift({round: state.rounds, human: humanAlloc, bot: botChoice, result: res, winner});
+  state.humanPast.push(humanAlloc);
+  updateUI();
+}
+
+function updateUI(){
+  humanScoreEl.textContent = state.humanScore;
+  botScoreEl.textContent = state.botScore;
+  roundDisplay.textContent = state.rounds;
+
+  historyEl.innerHTML = '';
+  state.history.slice(0,100).forEach(h =>{
+    const div = document.createElement('div'); div.className='logitem';
+    div.innerHTML = `<strong>Tur ${h.round} — Kazanan: ${h.winner}</strong><div class="muted">İnsan: [${h.human.join(', ')}] — Bot: [${h.bot.join(', ')}] — Skor: H${h.result[0]} : B${h.result[1]} (ties ${h.result[2]})</div>`;
+    historyEl.appendChild(div);
+  });
+}
+
+playBtn.addEventListener('click',()=>{playRound();});
+resetBtn.addEventListener('click',()=>{
+  if(confirm('Oyunu sıfırlamak istediğine emin misin?')){
+    state = {rounds:0,humanScore:0,botScore:0,history:[],humanPast:[]}; updateUI(); botExplain.innerHTML='Bot henüz oynadıktan sonra strateji açıklaması gösterecek.';
+  }
+});
+
+exportBtn.addEventListener('click',()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='blotto_history.json'; a.click(); URL.revokeObjectURL(url);
+});
+
+undoBtn.addEventListener('click',()=>{
+  const last = state.history.shift();
+  if(last){
+
+    if(last.winner==='Human') state.humanScore = Math.max(0,state.humanScore-1);
+    else if(last.winner==='Bot') state.botScore = Math.max(0,state.botScore-1);
+    state.rounds = Math.max(0,state.rounds-1);
+    state.humanPast.pop();
+    updateUI();
+  }
+});
+
+
+setSlidersFromNums(); updateUI();
+</script>
+</body>
+</html>

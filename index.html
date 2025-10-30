@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colonel Blotto Game</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: linear-gradient(90deg, #2a5298, #1e3c72);
+      color: #fff;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5em;
+    }
+    section {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+    h2 {
+      color: #66a6ff;
+      border-bottom: 2px solid #66a6ff;
+      padding-bottom: 5px;
+    }
+    code {
+      background-color: #2d2d2d;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 0.95em;
+      color: #ffcc66;
+    }
+    img {
+      display: block;
+      max-width: 100%;
+      margin: 20px auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9em;
+      background: #0d0d0d;
+      color: #aaa;
+    }
+    a {
+      color: #66a6ff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Colonel Blotto Game</h1>
+   
+  </header>
+
+  <section>
+    <h2>🎮 Oyun Hakkında Bilgi</h2>
+    <p>
+      <strong>Colonel Blotto Game</strong>, iki oyuncunun (örneğin iki komutanın) belirli miktarda kaynak (asker, para, enerji vb.) 
+      üzerinde stratejik dağılım yaptığı klasik bir sıfır toplamlı oyundur. Oyuncular kaynaklarını 
+      belirli sayıda cepheye dağıtır. Her cephede daha fazla kaynak ayıran oyuncu o cepheyi kazanır.
+      Oyunun sonunda en çok cephe kazanan taraf galip gelir.
+    </p>
+
+    <h2>👥 Oyuncular ve Stratejiler</h2>
+    <ul>
+      <li><strong>Oyuncular:</strong> İki kişi (Oyuncu A ve Oyuncu B)</li>
+      <li><strong>Kaynaklar:</strong> Her oyuncuya örneğin 100 asker verilir.</li>
+      <li><strong>Cephe Sayısı:</strong> 3 cephe (Front 1, Front 2, Front 3)</li>
+      <li><strong>Strateji:</strong> Oyuncular askerlerini cephelere şu şekilde dağıtır: <code>(x₁, x₂, x₃)</code> ve toplamı 100’dür.</li>
+    </ul>
+
+    <h2>📊 Ödeme Matrisi</h2>
+    <p>
+      Her cephede kazanım, daha fazla asker gönderen oyuncuya 1 puan kazandırır. 
+      Toplam puan farkına göre kazanan belirlenir. Örneğin:
+    </p>
+    <pre>
+Cephe   | Oyuncu A | Oyuncu B | Kazanan
+--------|-----------|-----------|--------
+1. Cephe| 40        | 30        | A
+2. Cephe| 30        | 40        | B
+3. Cephe| 30        | 30        | Berabere
+    </pre>
+    <p>Sonuç: Oyuncuların toplam kazancı eşit olduğundan oyun berabere biter.</p>
+
+    <h2>🧠 Nash Dengesi ve Pareto Optimum</h2>
+    <p>
+      <strong>Nash Dengesi:</strong> Her iki oyuncu da karşı tarafın stratejisini bildiğinde kendi stratejisini değiştirmek istemiyorsa denge sağlanır. 
+      Bu oyunda Nash dengesi, oyuncuların askerlerini eşit ve dengeli dağıttıkları durumlarda görülür.
+    </p>
+    <p>
+      <strong>Pareto Optimum:</strong> Her iki oyuncunun da durumunu kötüleştirmeden birinin kazancını artırmak mümkün değilse Pareto optimum sağlanır. 
+      Bu oyun sıfır toplamlı olduğundan Pareto optimum, Nash dengesiyle çakışır.
+    </p>
+
+    <h2>🧮 Matematiksel Model</h2>
+    <p>
+      Oyunun matematiksel formülasyonu:
+    </p>
+    <pre>
+Maksimize et:   ∑ wᵢ * sgn(xᵢ - yᵢ)
+Kısıt:           ∑ xᵢ = ∑ yᵢ = K
+xᵢ, yᵢ ≥ 0
+    </pre>
+    <p>
+      Burada <code>wᵢ</code> cephe ağırlığını, <code>xᵢ</code> ve <code>yᵢ</code> oyuncuların kaynak dağılımlarını temsil eder.
+    </p>
+
+    <h2>⚙️ Algoritmik Yönler</h2>
+    <p>
+      Denge stratejilerini bulmak için doğrusal programlama veya Monte Carlo simülasyonu kullanılabilir.
+      Basit yaklaşımlarda rastgele strateji üretip kazanan sayılabilir. 
+      Karma strateji denge hesaplaması, oyun kuramında olasılıksal kararlılık analiziyle yapılır.
+    </p>
+
+    <h2>💡 Gerçek Dünya Uygulamaları</h2>
+    <ul>
+      <li>Seçim kampanyalarında kaynak dağıtımı (reklam bütçesi, miting sayısı vb.)</li>
+      <li>Askerî strateji planlaması (birim dağılımı)</li>
+      <li>Pazarlama stratejisi (farklı bölgelerde satış gücü dağılımı)</li>
+      <li>Kredi ve yatırım kaynaklarının bölgesel tahsisi</li>
+    </ul>
+
+    <h2>📐 UML Diyagramı</h2>
+    <p>
+      Aşağıdaki UML diyagramı oyun yapısını temsil eder:
+    </p>
+    <img src="uml-diagram-placeholder.png" alt="Colonel Blotto UML Diyagramı">
+   
+
+    <h2>💻 Geliştirme Ortamı</h2>
+    <p>
+      Oyun, <strong>JavaScript tabanlı web uygulaması</strong> olarak geliştirilmiştir. 
+      Kullanıcılar web tarayıcısı üzerinden oyunu oynayabilir. 
+      Kodlar <strong>GitHub</strong> üzerinde paylaşılmıştır.
+    </p>
+    <ul>
+      <li><strong>Geliştirme Ortamı:</strong> Visual Studio Code</li>
+      <li><strong>Dil:</strong> HTML, CSS, JavaScript</li>
+      <li><strong>Platform:</strong> Web tabanlı (GitHub Pages)</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Hazırlayan: <strong>Kerim Selçuk Balcı</strong> | Giresun Üniversitesi</p>
+   
+  </footer>
+</body>
+</html>
